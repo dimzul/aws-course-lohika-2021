@@ -1,0 +1,49 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Template to create EC2 instance with access to it via HTTP and SSH
+
+Parameters:
+  KeyNameParameter:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Key-pair for Lohika's AWS course
+    Default: aws-course-2021
+
+  InstanceTypeParameter:
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro, t2.samll]
+
+Resources:
+  MyEC2Instance: 
+    Type: AWS::EC2::Instance
+    Properties: 
+      ImageId: ami-0cf6f5c8a62fa5da6
+      InstanceType: !Ref InstanceTypeParameter
+      KeyName: !Ref KeyNameParameter
+      SecurityGroups:
+        - !Ref SSHSecurityGroup
+        - !Ref HTTPSecurityGroup
+
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SSH access group
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+
+  HTTPSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: HTTP access group
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+
+Outputs:
+  EC2PublicIp:
+    Description: EC2 instance public IP address
+    Value: !GetAtt MyEC2Instance.PublicIp
