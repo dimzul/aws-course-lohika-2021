@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Template to create Auto Scaling group with access to it via HTTP and SSH
+
+Parameters:
+  KeyNameParameter:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Key-pair for Lohika's AWS course
+    Default: aws-course-2021
+
+  InstanceTypeParameter:
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro, t2.samll]
+
+  LaunchTemplateVersionParameter:
+    Type: String
+    Default: 1
+
+  ImageIdParameter:
+    Type: String
+    Default: ami-0cf6f5c8a62fa5da6
+
+Resources:
+  SmallLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !Ref ImageIdParameter
+        InstanceType: !Ref InstanceTypeParameter
+        KeyName: !Ref KeyNameParameter
+        UserData: 
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            sudo yum update -y
+            sudo yum install java-1.8.0-openjdk -y
+        SecurityGroups:
+          - !Ref SSHSecurityGroup
+          - !Ref HTTPSecurityGroup
+
+  SmallAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MinSize: 1
+      DesiredCapacity: 2
+      MaxSize: 4
+      AvailabilityZones: 
+        - us-west-2a
+      LaunchTemplate:
+        LaunchTemplateId: !Ref SmallLaunchTemplate
+        Version: !Ref LaunchTemplateVersionParameter
+
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SSH access group
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+
+  HTTPSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: HTTP access group
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
