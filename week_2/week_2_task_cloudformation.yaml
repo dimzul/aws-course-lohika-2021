@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Template to create EC2 instance with access to S3 bucket and availability via HTTP and SSH
+
+Parameters:
+  KeyNameParameter:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Key-pair for Lohika's AWS course
+    Default: aws-course-2021
+
+  InstanceTypeParameter:
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro, t2.samll]
+
+Resources:
+  MyEC2Instance: 
+    Type: AWS::EC2::Instance
+    Properties: 
+      IamInstanceProfile: !Ref EC2InstanceToS3Profile
+      ImageId: ami-0cf6f5c8a62fa5da6
+      InstanceType: !Ref InstanceTypeParameter
+      KeyName: !Ref KeyNameParameter
+      SecurityGroups:
+        - !Ref SSHSecurityGroup
+        - !Ref HTTPSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          aws s3 cp s3://dimzul-week-2-bucket/week-2/text.txt /home/ec2-user/text.txt
+
+  EC2InstanceToS3Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: 
+              Service: ec2.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      Path: /
+      Policies:
+        - PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                - 's3:ListBucket'
+                Resource: 'arn:aws:s3:::dimzul-week-2-bucket'
+                Effect: Allow
+              - Action:
+                - 's3:GetObject'
+                Resource: 'arn:aws:s3:::dimzul-week-2-bucket/*'
+                Effect: Allow
+          PolicyName: S3AccessToWeek2Bucket
+
+  EC2InstanceToS3Profile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref EC2InstanceToS3Role
+
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SSH access group
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+        CidrIp: 0.0.0.0/0
+
+  HTTPSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: HTTP access group
+      SecurityGroupIngress:
+        IpProtocol: tcp
+        FromPort: 80
+        ToPort: 80
+        CidrIp: 0.0.0.0/0
+
+Outputs:
+  EC2PublicIp:
+    Description: EC2 instance public IP address
+    Value: !GetAtt MyEC2Instance.PublicIp
