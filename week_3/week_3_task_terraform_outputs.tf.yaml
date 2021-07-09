@@ -1,0 +1,14 @@
+output "instance_public_ip" {
+  description = "Public IP address of the EC2 instance"
+  value       = aws_instance.MyEC2Instance.public_ip
+}
+
+output "db_instance_port" {
+  description = "The database port"
+  value       = aws_db_instance.postgre-db.port
+}
+
+output "db_instance_hostname" {
+  description = "The connection hostname"
+  value       = aws_db_instance.postgre-db.address
+}
