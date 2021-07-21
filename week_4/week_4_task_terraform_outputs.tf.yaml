@@ -1,0 +1,5 @@
+output "application_load_balancer" {
+  description = "Application load balancer's DNS"
+  value       = aws_lb.application_load_balancer.dns_name
+}
+
